@@ -1,0 +1,8 @@
+node_modules
+dist
+
+.github
+
+.env
+backend/user-service/combined.log
+backend/user-service/error.log

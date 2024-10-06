@@ -1,0 +1,25 @@
+{
+    "name": "cs3219-ay2425s1-project-g18",
+    "version": "1.0.0",
+    "description": "[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/bzPrOe11)\r # CS3219 Project (PeerPrep) - AY2425S1\r ## Group: G18",
+    "main": "index.js",
+    "scripts": {
+        "frontend": "cd frontend && npm run dev",
+        "backend": "cd backend && npm run dev",
+        "install:all": "concurrently \"cd frontend && npm install\" \"cd backend/user-service && npm install\" \"cd backend/question-service && npm install\"",
+        "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
+        "format": "prettier --write \"**/*.{js,ts,json,md,css,html}\"",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/express": "^5.0.0",
+        "concurrently": "^9.0.1",
+        "prettier": "^3.3.3"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.5",
+        "express": "^4.21.0"
+    }
+}
