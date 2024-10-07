@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
 import { connect } from 'mongoose'
+import logger from '../utils/logger'
 
 dotenv.config({ path: './.env' })
 
@@ -14,10 +15,10 @@ export const connectToDatabase = async () => {
         const res = await connect(url)
 
         if (res) {
-            console.log('Connected to question service database')
+            logger.info('Connected to question service database')
             return
         }
     } catch (e) {
-        console.log('Cannot connect to question service database', e)
+        logger.error('Cannot connect to question service database', e)
     }
 }

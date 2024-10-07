@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import Question from '../models/question'
+import logger from '../utils/logger'
 
 const getQuestionsByFilter = async (req: Request, res: Response) => {
     try {
@@ -29,12 +30,16 @@ const getQuestionsByFilter = async (req: Request, res: Response) => {
         const retrievedQuestions = await Question.find(filter)
 
         if (!retrievedQuestions) {
-            return res.status(400).send('No questions found')
+            logger.error('No questions found')
+            return res.status(400).json({ message: 'No questions found' })
         }
 
         return res.status(200).json(retrievedQuestions)
     } catch (e) {
-        return res.status(500).send('Error appeared when retrieving questions')
+        logger.error('Error appeared when retrieving questions', e)
+        return res
+            .status(500)
+            .json({ message: 'Error appeared when retrieving questions' })
     }
 }
 

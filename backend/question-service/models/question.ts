@@ -11,8 +11,8 @@ interface IQuestion {
 
 const questionSchema = new Schema<IQuestion>({
     questionId: { type: Number, required: true, unique: true },
-    title: { type: String, required: true },
-    description: { type: String, required: true },
+    title: { type: String, required: true, unique: true },
+    description: { type: String, required: true, unique: true },
     categories: { type: [String], required: true },
     difficulty: { type: String, required: true },
     imageUrl: { type: String },

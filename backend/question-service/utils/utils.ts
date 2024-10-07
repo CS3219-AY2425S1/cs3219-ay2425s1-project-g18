@@ -2,16 +2,12 @@ import Question from '../models/question'
 
 const checkQuestionExists = async (
     title: string,
-    description: string,
-    categories: string[],
-    difficulty: string,
+    description: string
 ) => {
     try {
         const question = await Question.findOne({
-            title,
-            description,
-            categories,
-            difficulty,
+            $or: [{ title }, 
+                { description }],
         })
 
         if (question) {

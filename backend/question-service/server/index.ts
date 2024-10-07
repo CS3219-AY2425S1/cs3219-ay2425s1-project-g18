@@ -6,6 +6,7 @@ import { router as addQuestionRoute } from '../add-question/addQuestionRoute'
 import { router as deleteQuestionRoute } from '../delete-question/deleteQuestionRoute'
 import { router as getQuestionsRoute } from '../get-questions/getQuestionsRoute'
 import { router as editQuestionRoute } from '../edit-question/editQuestionRoute'
+import logger from '../utils/logger'
 
 dotenv.config({ path: './.env' })
 
@@ -24,5 +25,5 @@ app.use(getQuestionsRoute)
 app.use(editQuestionRoute)
 
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`)
+    logger.info(`Server running on port ${port}`)
 })
