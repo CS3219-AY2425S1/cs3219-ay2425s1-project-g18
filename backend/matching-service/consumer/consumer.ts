@@ -130,7 +130,7 @@ const processMatching = async (
 }
 
 const cancelMatchRequest = (name: string) => {
-    const index = requestQueue.findIndex(req => req.name === name)
+    const index = requestQueue.findIndex(req => req.userId === name)
     if (index !== -1) {
         requestQueue.splice(index, 1)
         logger.info(`Match request for ${name} has been cancelled and removed from the queue`)
