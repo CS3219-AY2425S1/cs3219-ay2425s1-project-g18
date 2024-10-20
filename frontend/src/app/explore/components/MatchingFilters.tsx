@@ -1,3 +1,4 @@
+// frontend/src/app/explore/components/MatchingFilters.tsx
 "use client"
 import React, { useEffect, useRef, useState } from 'react'
 import { Button } from "@/components/ui/button"
@@ -8,9 +9,7 @@ import SuccessMatchInfo from './SuccessMatchInfo';
 import {
     Select,
     SelectContent,
-    SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
@@ -23,19 +22,12 @@ const MatchingFilters = () => {
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
     const [selectedDifficulty, setSelectedDifficulty] = useState<string>();
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [isMatchFound, setIsMatchFound] = useState(false);
     const [matchPartner, setMatchPartner] = useState<any | null>(null);
+    const [cancelMessage, setCancelMessage] = useState<string | null>(null);
 
-    const sampleMatch = {
-        user: "John Doe",
-        question: "Two Sum",
-        language: "Python",
-        difficulty: "Easy",
-        categories: ["Bitmap", "Recursion"],
-    }
     const languagesList = [
         { label: "Python", value: "Python" },
         { label: "JavaScript", value: "JavaScript" },
@@ -63,20 +55,6 @@ const MatchingFilters = () => {
         { label: "Medium", value: "Medium" },
         { label: "Hard", value: "Hard" },
     ]
-    const questionsList = [
-        { label: "Question 1", value: "Question 1" },
-        { label: "Question 2", value: "Question 2" },
-        { label: "Question 3", value: "Question 3" },
-        { label: "Question 4", value: "Question 4" },
-        { label: "Question 5", value: "Question 5" },
-        { label: "Question 6", value: "Question 6" },
-        { label: "Question 7", value: "Question 7" },
-        { label: "Question 8", value: "Question 8" },
-        { label: "Question 9", value: "Question 9" },
-        { label: "Question 10", value: "Question 10" },
-    ]
-
-    let socket: Socket;
 
     // Setup socket connection and event handlers
     useEffect(() => {
@@ -93,34 +71,59 @@ const MatchingFilters = () => {
             setMatchPartner(partner);
             setIsMatchFound(true);
             setIsSearching(false);
+            setElapsedTime(0);
         });
 
         socket.on('noMatchFound', (data: any) => {
             console.log(`No match found:`, data.message);
             setIsSearching(false);
+            setElapsedTime(0);
+        });
+
+        socket.on('cancelled', (data: any) => {
+            console.log(`Cancellation confirmed:`, data.message);
+            setCancelMessage(data.message);
+            setIsSearching(false);
+            setElapsedTime(0);
+        });
+
+        socket.on('error', (error: any) => {
+            console.error(`Error:`, error.message);
+            setIsSearching(false);
+            setElapsedTime(0);
         });
 
         return () => {
             socket.off('connect');
             socket.off('matchFound');
             socket.off('noMatchFound');
+            socket.off('cancelled');
+            socket.off('error');
             socket.disconnect();
         }
     }, []);
 
-    // PUSH USER TO QUEUE
+    // Function to handle match request and cancellation
     const onSearchPress = () => {
-        setIsSearching(!isSearching);
         if (!isSearching) {
-            // Sample match request
+            setIsSearching(true);
+            setIsMatchFound(false);
+            setMatchPartner(null);
+            setCancelMessage(null);
             const matchRequest = {
                 name: user?.id,
                 difficulty: selectedDifficulty,
                 categories: selectedCategories,
-            }
+            };
             socketRef.current?.emit('login', user?.id);
             socketRef.current?.emit('requestMatch', matchRequest);
             console.log('Sent match request', matchRequest);
+        } else {
+            setIsSearching(false);
+            setElapsedTime(0);
+            socketRef.current?.emit('cancel');
+            console.log('Sent cancel request');
+            setCancelMessage('Your match request has been cancelled.');
         }
     }
 
@@ -144,7 +147,12 @@ const MatchingFilters = () => {
 
     return (
         <div className="flex flex-col p-8 gap-4">
-            {isMatchFound && <SuccessMatchInfo isOpen={isMatchFound} match={sampleMatch} onOpenChange={setIsMatchFound} handleAccept={() => { }} />}
+            {isMatchFound && <SuccessMatchInfo isOpen={isMatchFound} match={matchPartner} onOpenChange={setIsMatchFound} handleAccept={() => { }} />}
+            {cancelMessage && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <span className="block sm:inline">{cancelMessage}</span>
+                </div>
+            )}
             <h1 className="text-2xl font-bold self-start text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-text-first)] via-[var(--gradient-text-second)] to-[var(--gradient-text-third)]">Look for peers to code now!</h1>
             <div className='flex gap-6'>
                 {/* <div className='w-1/3'>
@@ -160,7 +168,7 @@ const MatchingFilters = () => {
                 </div> */}
                 <div className='w-1/3'>
                     <Label>Difficulty</Label>
-                    <Select onValueChange={(value:string) => setSelectedDifficulty(value)}>
+                    <Select onValueChange={(value: string) => setSelectedDifficulty(value)} value={selectedDifficulty}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select a difficulty" />
                         </SelectTrigger>
@@ -172,14 +180,6 @@ const MatchingFilters = () => {
                             ))}
                         </SelectContent>
                     </Select>
-                    {/* <MultiSelect
-                        options={difficultyList}
-                        onValueChange={setSelectedDifficulty}
-                        defaultValue={selectedDifficulty}
-                        placeholder="Select difficulty..."
-                        maxCount={3}
-                        disabled={isSearching}
-                    /> */}
                 </div>
                 <div className='w-2/3'>
                     <Label>Categories</Label>
@@ -209,7 +209,7 @@ const MatchingFilters = () => {
                     {isSearching ? (
                         <>
                             <Spinner size='small' className="size-small mr-2" />
-                            <span>{formatTime(elapsedTime)}</span>
+                            <span>Cancel ({formatTime(elapsedTime)})</span>
                         </>
                     ) : (
                         "Match Now"
