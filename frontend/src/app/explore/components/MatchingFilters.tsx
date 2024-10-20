@@ -86,6 +86,28 @@ const MatchingFilters = () => {
             })
         });
 
+        socket.on('cancelled', (data: any) => {
+            console.log(`Cancellation confirmed:`, data.message);
+            setCancelMessage(data.message);
+            setIsSearching(false);
+            setElapsedTime(0);
+            toast({
+                title: "Match Request Cancelled",
+                description: data.message,
+            })
+        });
+
+        socket.on('error', (error: any) => {
+            console.error(`Error from server:`, error.message);
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: 'destructive',
+            })
+            setIsSearching(false);
+            setElapsedTime(0);
+        });
+
         return () => {
             socket.off('connect');
             socket.off('matchFound');
@@ -94,7 +116,7 @@ const MatchingFilters = () => {
             socket.off('error');
             socket.disconnect();
         }
-    }, []);
+    }, [toast]);
 
     // Function to handle match request and cancellation
     const onSearchPress = () => {
@@ -104,8 +126,7 @@ const MatchingFilters = () => {
             setMatchPartner(null);
             setCancelMessage(null);
             const matchRequest = {
-                userId: user?.id,
-                userName: user?.name,
+                name: user?.id, // Assuming 'name' is user ID
                 difficulty: selectedDifficulty,
                 categories: selectedCategories,
             };
@@ -118,6 +139,10 @@ const MatchingFilters = () => {
             socketRef.current?.emit('cancel');
             console.log('Sent cancel request');
             setCancelMessage('Your match request has been cancelled.');
+            toast({
+                title: "Match Request Cancelled",
+                description: "You have successfully cancelled your match request.",
+            })
         }
     }
 
@@ -142,6 +167,11 @@ const MatchingFilters = () => {
     return (
         <div className="flex flex-col p-8 gap-4">
             {isMatchFound && <SuccessMatchInfo isOpen={isMatchFound} match={matchPartner} onOpenChange={setIsMatchFound} handleAccept={() => { }} />}
+            {cancelMessage && (
+                <div className="p-4 bg-red-100 text-red-800 rounded">
+                    {cancelMessage}
+                </div>
+            )}
             <h1 className="text-2xl font-bold self-start text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-text-first)] via-[var(--gradient-text-second)] to-[var(--gradient-text-third)]">Look for peers to code now!</h1>
             <div className='flex gap-6'>
                 {/* <div className='w-1/3'>
