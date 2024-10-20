@@ -128,4 +128,14 @@ const processMatching = async (
     }
 }
 
-export { startConsumer }
+const cancelMatchRequest = (name: string) => {
+    const index = requestQueue.findIndex(req => req.name === name)
+    if (index !== -1) {
+        requestQueue.splice(index, 1)
+        logger.info(`Match request for ${name} has been cancelled and removed from the queue`)
+    } else {
+        logger.info(`No active match request found for ${name} to cancel`)
+    }
+}
+
+export { startConsumer, cancelMatchRequest }

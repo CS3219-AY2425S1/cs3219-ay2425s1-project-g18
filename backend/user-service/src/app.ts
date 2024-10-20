@@ -11,7 +11,7 @@ app.use(express.json());
 
 // CORS config
 app.use(cors({
-    origin: 'http://localhost:3000', // Replace with frontend URL
+    origin: ['http://localhost:3000', 'http://localhost:3001'], // Replace with frontend URL
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true, // allows cookies to be sent
 }));
