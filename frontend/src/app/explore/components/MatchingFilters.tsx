@@ -15,10 +15,13 @@ import {
 } from "@/components/ui/select"
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/context/authContext';
+import { useToast } from '@/hooks/use-toast';
+import { Hourglass } from 'lucide-react';
 
 const MatchingFilters = () => {
     const socketRef = useRef<Socket | null>(null);
     const { user, isAuthenticated } = useAuth();
+    const { toast } = useToast()
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
     const [selectedDifficulty, setSelectedDifficulty] = useState<string>();
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -77,20 +80,10 @@ const MatchingFilters = () => {
         socket.on('noMatchFound', (data: any) => {
             console.log(`No match found:`, data.message);
             setIsSearching(false);
-            setElapsedTime(0);
-        });
-
-        socket.on('cancelled', (data: any) => {
-            console.log(`Cancellation confirmed:`, data.message);
-            setCancelMessage(data.message);
-            setIsSearching(false);
-            setElapsedTime(0);
-        });
-
-        socket.on('error', (error: any) => {
-            console.error(`Error:`, error.message);
-            setIsSearching(false);
-            setElapsedTime(0);
+            toast({
+                title: "Matchmaking timeout",
+                description: "We could not find a match for you in time. Try again!",
+            })
         });
 
         return () => {
@@ -111,7 +104,8 @@ const MatchingFilters = () => {
             setMatchPartner(null);
             setCancelMessage(null);
             const matchRequest = {
-                name: user?.id,
+                userId: user?.id,
+                userName: user?.name,
                 difficulty: selectedDifficulty,
                 categories: selectedCategories,
             };
@@ -148,11 +142,6 @@ const MatchingFilters = () => {
     return (
         <div className="flex flex-col p-8 gap-4">
             {isMatchFound && <SuccessMatchInfo isOpen={isMatchFound} match={matchPartner} onOpenChange={setIsMatchFound} handleAccept={() => { }} />}
-            {cancelMessage && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <span className="block sm:inline">{cancelMessage}</span>
-                </div>
-            )}
             <h1 className="text-2xl font-bold self-start text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-text-first)] via-[var(--gradient-text-second)] to-[var(--gradient-text-third)]">Look for peers to code now!</h1>
             <div className='flex gap-6'>
                 {/* <div className='w-1/3'>
@@ -168,7 +157,7 @@ const MatchingFilters = () => {
                 </div> */}
                 <div className='w-1/3'>
                     <Label>Difficulty</Label>
-                    <Select onValueChange={(value: string) => setSelectedDifficulty(value)} value={selectedDifficulty}>
+                    <Select disabled={isSearching} onValueChange={(value: string) => setSelectedDifficulty(value)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select a difficulty" />
                         </SelectTrigger>

@@ -49,11 +49,12 @@ const startConsumer = async (
         'matching_requests',
         (msg: { content: { toString: () => string } }) => {
             if (msg) {
-                const { name, difficulty, categories } = JSON.parse(
+                const { userId, userName, difficulty, categories } = JSON.parse(
                     msg.content.toString(),
                 )
                 const request: TimedMatchRequest = {
-                    name,
+                    userId,
+                    userName,
                     difficulty,
                     categories,
                     timestamp: Date.now(),
@@ -85,10 +86,10 @@ const processMatching = async (
     isMatching = true
 
     try {
-        let reqIndex = requestQueue.findIndex((x) => x.name === req.name)
+        let reqIndex = requestQueue.findIndex((x) => x.userId === req.userId)
 
         if (reqIndex === -1) {
-            logger.info(`${req.name} has already been matched and removed from the queue`)
+            logger.info(`${req.userId} has already been matched and removed from the queue`)
             return
         }
 
@@ -101,21 +102,21 @@ const processMatching = async (
         
         if (reqIndex !== -1) {
             requestQueue.splice(reqIndex, 1)
-            logger.info(`${req.name} has been removed from the queue`)
+            logger.info(`${req.userId} has been removed from the queue`)
         }
 
         if (matchPartner) {
             sendMatchResult(req, matchPartner, io, connectedClients)
             let partnerIndex = requestQueue.findIndex(
-                (x) => x.name === matchPartner.name,
+                (x) => x.userId === matchPartner.userId,
             )
             if (partnerIndex !== -1) {
                 requestQueue.splice(partnerIndex, 1)
-                logger.info(`${matchPartner.name} has been removed from the queue`)
+                logger.info(`${matchPartner.userId} has been removed from the queue`)
             }
             return
         } else {
-            const requestSockId = connectedClients.get(req.name)
+            const requestSockId = connectedClients.get(req.userId)
 
             if (requestSockId) {
                 io.to(requestSockId).emit('noMatchFound', {

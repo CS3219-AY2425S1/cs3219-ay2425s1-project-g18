@@ -16,9 +16,10 @@ import { Label }from "@/components/ui/label";
 interface SuccessMatchInfoProps {
     isOpen: boolean;
     match: {
-        user: string;
-        question: string;
-        language: string;
+        userId: string;
+        userName: string;
+        questionId: string;
+        title: string;
         difficulty: string;
         categories: string[];
     },
@@ -31,6 +32,8 @@ const SuccessMatchInfo = (props: SuccessMatchInfoProps) => {
     const { isOpen, match, onOpenChange, handleAccept } = props;
     const [timerProgress, setTimerProgress] = useState(0); // Progress from 0 to 100
     const [isAcceptDisabled, setIsAcceptDisabled] = useState(false);
+
+    console.log(match)
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -78,14 +81,14 @@ const SuccessMatchInfo = (props: SuccessMatchInfoProps) => {
                                 <UserIcon className="h-8 w-8" />
                             </div>
                             <div>
-                                <h4 className="text-lg font-semibold">{match.user}</h4>
+                                <h4 className="text-lg font-semibold">{match.userName}</h4>
                             </div>
                         </div>
                     </div>
                     <div>
                         <p className="text-sm mb-2">Question:</p>
                         <div>
-                            <h4 className="text-lg font-semibold">{match.question}</h4>
+                            <h4 className="text-lg font-semibold">{match.questionId}. {match.title}</h4>
                         </div>
                     </div>
                     <div>

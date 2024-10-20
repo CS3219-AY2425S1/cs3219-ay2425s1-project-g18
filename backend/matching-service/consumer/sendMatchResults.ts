@@ -8,8 +8,8 @@ const sendMatchResult = async (
     io: Server,
     connectedClients: Map<string, string>,
 ) => {
-    const requestSockId = connectedClients.get(req.name)
-    const partnerSockId = connectedClients.get(partner.name)
+    const requestSockId = connectedClients.get(req.userId)
+    const partnerSockId = connectedClients.get(partner.userId)
 
     if (requestSockId) {
         io.to(requestSockId).emit('matchFound', partner)
@@ -17,7 +17,8 @@ const sendMatchResult = async (
 
     if (partnerSockId) {
         const requester: MatchPartner = {
-            name: req.name,
+            userId: req.userId,
+            userName: req.userName,
             questionId: partner.questionId,
             title: partner.title,
             difficulty: req.difficulty,
@@ -27,7 +28,7 @@ const sendMatchResult = async (
         io.to(partnerSockId).emit('matchFound', requester)
     }
 
-    logger.info(`Match partners sent to ${req.name} and ${partner.name}`)
+    logger.info(`Match partners sent to ${req.userId} and ${partner.userId}`)
 }
 
 export { sendMatchResult }

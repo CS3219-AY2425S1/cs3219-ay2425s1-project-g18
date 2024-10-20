@@ -1,12 +1,14 @@
 export interface TimedMatchRequest {
-    name: string
+    userId: string
+    userName: string
     difficulty: string
     categories: string[]
     timestamp: number
 }
 
 export interface MatchPartner {
-    name: string
+    userId: string
+    userName: string
     questionId: number,
     title: string,
     difficulty: string

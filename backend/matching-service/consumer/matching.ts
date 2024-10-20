@@ -13,7 +13,7 @@ const performMatching = async (
     let maxCommonCategories = 0
 
     for (const curr of activeRequests) {
-        if (curr.name === req.name) continue
+        if (curr.userId === req.userId) continue
 
         if (curr.difficulty === req.difficulty) {
             const commonCategories = req.categories.filter((category) =>
@@ -49,14 +49,15 @@ const performMatching = async (
         }
 
         const matchPartner: MatchPartner = {
-            name: bestMatch.name,
+            userId: bestMatch.userId,
+            userName: bestMatch.userName,
             questionId: res.data.questionId,
             title: res.data.title,
             difficulty: bestMatch.difficulty,
             categories: res.data.categories
         }
 
-        logger.info(`Matched ${req.name} with ${bestMatch.name}`)
+        logger.info(`Matched ${req.userName} with ${bestMatch.userName}`)
         return matchPartner
     }
     return null
