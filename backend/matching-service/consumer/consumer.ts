@@ -161,6 +161,7 @@ const startConsumer = async (
             (r) =>
                 r.userId !== newRequest.userId &&
                 r.difficulty === newRequest.difficulty &&
+                r.language === newRequest.language &&
                 r.categories.some((category) =>
                     newRequest.categories.includes(category),
                 ),
