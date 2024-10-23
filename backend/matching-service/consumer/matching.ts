@@ -17,7 +17,7 @@ const performMatching = async (
     for (const curr of activeRequests) {
         if (curr.userId === req.userId) continue
 
-        if (curr.difficulty === req.difficulty) {
+        if (curr.language == req.language && curr.difficulty === req.difficulty) {
             const commonCategories = req.categories.filter((category) =>
                 curr.categories.includes(category),
             )
@@ -57,7 +57,8 @@ const performMatching = async (
             questionId: res.data.questionId,
             title: res.data.title,
             difficulty: bestMatch.difficulty,
-            categories: res.data.categories
+            categories: res.data.categories,
+            language: res.data.language
         }
 
         logger.info(`Matched ${req.userName} with ${bestMatch.userName}`)

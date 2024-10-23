@@ -23,6 +23,7 @@ const sendMatchResult = async (
             title: partner.title,
             difficulty: req.difficulty,
             categories: partner.categories,
+            language: req.language,
         }
 
         io.to(partnerSockId).emit('matchFound', requester)

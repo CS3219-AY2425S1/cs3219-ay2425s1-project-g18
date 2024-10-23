@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.5",
+    "@types/socket.io": "^3.0.1",
     "nodemon": "^3.1.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"

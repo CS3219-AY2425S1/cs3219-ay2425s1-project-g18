@@ -6,7 +6,7 @@ import logger from '../utils/logger'
 import { sendMatchResult } from './sendMatchResults'
 
 const requestQueue: TimedMatchRequest[] = []
-const MATCH_TIMEOUT = 300000 // 5 minutes
+const MATCH_TIMEOUT = 30000 // 30 seconds
 let isMatching: boolean = false
 
 // track timeouts for each userId
@@ -21,31 +21,59 @@ const startConsumer = async (
 
     const maxRetries = 3
     const retryDelay = 13000 // 13 seconds
-    const rabbitUrl: string = process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672'
+    const rabbitUrl: string =
+        process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672'
     const queueName = 'matching_requests'
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            logger.info(`Attempt ${attempt}: Connecting to RabbitMQ at ${rabbitUrl}`, { service: 'matching-service', timestamp: new Date().toISOString() })
+            logger.info(
+                `Attempt ${attempt}: Connecting to RabbitMQ at ${rabbitUrl}`,
+                {
+                    service: 'matching-service',
+                    timestamp: new Date().toISOString(),
+                },
+            )
             connection = await connect(rabbitUrl)
             channel = await connection.createChannel()
             await channel.assertQueue(queueName, { durable: false })
 
-            logger.info('Connected to RabbitMQ and waiting for matching requests...', { service: 'matching-service', timestamp: new Date().toISOString() })
+            logger.info(
+                'Connected to RabbitMQ and waiting for matching requests...',
+                {
+                    service: 'matching-service',
+                    timestamp: new Date().toISOString(),
+                },
+            )
             break
         } catch (error: any) {
-            logger.error(`Attempt ${attempt}: Failed to connect to RabbitMQ: ${error.message}`, { service: 'matching-service', timestamp: new Date().toISOString() })
+            logger.error(
+                `Attempt ${attempt}: Failed to connect to RabbitMQ: ${error.message}`,
+                {
+                    service: 'matching-service',
+                    timestamp: new Date().toISOString(),
+                },
+            )
             if (attempt === maxRetries) {
-                logger.error('Max retries reached. Exiting.', { service: 'matching-service', timestamp: new Date().toISOString() })
+                logger.error('Max retries reached. Exiting.', {
+                    service: 'matching-service',
+                    timestamp: new Date().toISOString(),
+                })
                 process.exit(1)
             }
-            logger.info(`Retrying in ${retryDelay / 1000} seconds...`, { service: 'matching-service', timestamp: new Date().toISOString() })
-            await new Promise(res => setTimeout(res, retryDelay))
+            logger.info(`Retrying in ${retryDelay / 1000} seconds...`, {
+                service: 'matching-service',
+                timestamp: new Date().toISOString(),
+            })
+            await new Promise((res) => setTimeout(res, retryDelay))
         }
     }
 
     if (!channel) {
-        logger.error('Channel was not created. Exiting.', { service: 'matching-service', timestamp: new Date().toISOString() })
+        logger.error('Channel was not created. Exiting.', {
+            service: 'matching-service',
+            timestamp: new Date().toISOString(),
+        })
         process.exit(1)
     }
 
@@ -53,19 +81,22 @@ const startConsumer = async (
         queueName,
         (msg: any) => {
             if (msg) {
-                const { userId, userName, difficulty, categories } = JSON.parse(
-                    msg.content.toString(),
-                )
+                const { userId, userName, difficulty, categories, language } =
+                    JSON.parse(msg.content.toString())
                 const request: TimedMatchRequest = {
                     userId,
                     userName,
                     difficulty,
                     categories,
+                    language,
                     timestamp: Date.now(),
                 }
                 logger.info(
                     `Received matching request: ${JSON.stringify(request)}`,
-                    { service: 'matching-service', timestamp: new Date().toISOString() }
+                    {
+                        service: 'matching-service',
+                        timestamp: new Date().toISOString(),
+                    },
                 )
                 requestQueue.push(request)
 
@@ -86,16 +117,31 @@ const startConsumer = async (
         const index = requestQueue.findIndex((x) => x.userId === userId)
         if (index !== -1) {
             requestQueue.splice(index, 1)
-            logger.info(`User ${userId} has been removed from the queue via cancellation`, { service: 'matching-service', timestamp: new Date().toISOString() })
+            logger.info(
+                `User ${userId} has been removed from the queue via cancellation`,
+                {
+                    service: 'matching-service',
+                    timestamp: new Date().toISOString(),
+                },
+            )
 
             const timeout = timeoutMap.get(userId)
             if (timeout) {
                 clearTimeout(timeout)
                 timeoutMap.delete(userId)
-                logger.info(`Cleared matchmaking timeout for user ${userId}`, { service: 'matching-service', timestamp: new Date().toISOString() })
+                logger.info(`Cleared matchmaking timeout for user ${userId}`, {
+                    service: 'matching-service',
+                    timestamp: new Date().toISOString(),
+                })
             }
         } else {
-            logger.info(`User ${userId} not found in the queue during cancellation`, { service: 'matching-service', timestamp: new Date().toISOString() })
+            logger.info(
+                `User ${userId} not found in the queue during cancellation`,
+                {
+                    service: 'matching-service',
+                    timestamp: new Date().toISOString(),
+                },
+            )
         }
     }
 
@@ -105,23 +151,48 @@ const startConsumer = async (
         connectedClients: Map<string, string>,
     ) => {
         if (isMatching) {
-            logger.info(`Currently matching. Skipping immediate match for user ${newRequest.userId}`)
+            logger.info(
+                `Currently matching. Skipping immediate match for user ${newRequest.userId}`,
+            )
             return
         }
 
         const activeRequests = requestQueue.filter(
-            (r) => r.userId !== newRequest.userId && r.difficulty === newRequest.difficulty && r.categories.some(category => newRequest.categories.includes(category))
+            (r) =>
+                r.userId !== newRequest.userId &&
+                r.difficulty === newRequest.difficulty &&
+                r.categories.some((category) =>
+                    newRequest.categories.includes(category),
+                ),
         )
 
-        logger.info(`Attempting immediate match for user ${newRequest.userId}. Active requests: ${activeRequests.map(r => r.userId).join(', ')}`)
+        logger.info(
+            `Attempting immediate match for user ${newRequest.userId}. Active requests: ${activeRequests.map((r) => r.userId).join(', ')}`,
+        )
 
         if (activeRequests.length > 0) {
             const bestMatch = await performMatching(newRequest, activeRequests)
 
             if (bestMatch) {
-                requestQueue.splice(requestQueue.findIndex(x => x.userId === newRequest.userId), 1)
-                requestQueue.splice(requestQueue.findIndex(x => x.userId === bestMatch.userId), 1)
-                logger.info(`Matched user ${newRequest.userId} with user ${bestMatch.userId}`, { service: 'matching-service', timestamp: new Date().toISOString() })
+                requestQueue.splice(
+                    requestQueue.findIndex(
+                        (x) => x.userId === newRequest.userId,
+                    ),
+                    1,
+                )
+                requestQueue.splice(
+                    requestQueue.findIndex(
+                        (x) => x.userId === bestMatch.userId,
+                    ),
+                    1,
+                )
+                logger.info(
+                    `Matched user ${newRequest.userId} with user ${bestMatch.userId}`,
+                    {
+                        service: 'matching-service',
+                        timestamp: new Date().toISOString(),
+                    },
+                )
 
                 // clear timeouts
                 const timeout1 = timeoutMap.get(newRequest.userId)
@@ -160,7 +231,13 @@ const processMatching = async (
         let reqIndex = requestQueue.findIndex((x) => x.userId === req.userId)
 
         if (reqIndex === -1) {
-            logger.info(`${req.userId} has already been matched and removed from the queue`, { service: 'matching-service', timestamp: new Date().toISOString() })
+            logger.info(
+                `${req.userId} has already been matched and removed from the queue`,
+                {
+                    service: 'matching-service',
+                    timestamp: new Date().toISOString(),
+                },
+            )
             return
         }
 
@@ -170,16 +247,25 @@ const processMatching = async (
         )
 
         const matchPartner = await performMatching(req, activeRequests)
-        
+
         if (reqIndex !== -1) {
             requestQueue.splice(reqIndex, 1)
-            logger.info(`${req.userId} has been removed from the queue`, { service: 'matching-service', timestamp: new Date().toISOString() })
+            logger.info(`${req.userId} has been removed from the queue`, {
+                service: 'matching-service',
+                timestamp: new Date().toISOString(),
+            })
 
             const timeout = timeoutMap.get(req.userId)
             if (timeout) {
                 clearTimeout(timeout)
                 timeoutMap.delete(req.userId)
-                logger.info(`Cleared matchmaking timeout for user ${req.userId}`, { service: 'matching-service', timestamp: new Date().toISOString() })
+                logger.info(
+                    `Cleared matchmaking timeout for user ${req.userId}`,
+                    {
+                        service: 'matching-service',
+                        timestamp: new Date().toISOString(),
+                    },
+                )
             }
         }
 
@@ -190,13 +276,25 @@ const processMatching = async (
             )
             if (partnerIndex !== -1) {
                 requestQueue.splice(partnerIndex, 1)
-                logger.info(`${matchPartner.userId} has been removed from the queue`, { service: 'matching-service', timestamp: new Date().toISOString() })
+                logger.info(
+                    `${matchPartner.userId} has been removed from the queue`,
+                    {
+                        service: 'matching-service',
+                        timestamp: new Date().toISOString(),
+                    },
+                )
 
                 const partnerTimeout = timeoutMap.get(matchPartner.userId)
                 if (partnerTimeout) {
                     clearTimeout(partnerTimeout)
                     timeoutMap.delete(matchPartner.userId)
-                    logger.info(`Cleared matchmaking timeout for user ${matchPartner.userId}`, { service: 'matching-service', timestamp: new Date().toISOString() })
+                    logger.info(
+                        `Cleared matchmaking timeout for user ${matchPartner.userId}`,
+                        {
+                            service: 'matching-service',
+                            timestamp: new Date().toISOString(),
+                        },
+                    )
                 }
             }
             return
@@ -210,7 +308,10 @@ const processMatching = async (
             }
         }
     } catch (error: any) {
-        logger.error(`Error during matching process: ${error.message}`, { service: 'matching-service', timestamp: new Date().toISOString() })
+        logger.error(`Error during matching process: ${error.message}`, {
+            service: 'matching-service',
+            timestamp: new Date().toISOString(),
+        })
     } finally {
         isMatching = false
     }
