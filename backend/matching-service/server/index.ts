@@ -1,15 +1,27 @@
 import axios from 'axios'
 import dotenv from 'dotenv'
+import express from 'express'
+import { createServer } from 'http'
 import { Server } from 'socket.io'
 import { sendMatchingRequest } from '../producer/producer'
 import { activeMatches, startConsumer } from '../consumer/consumer'
+import { router as createMatchRouter } from '../create-match/createMatchRoute'
+import { router as updateMatchRouter } from '../update-match/updateMatchRoute'
+import { connectToDatabase } from './db'
 import logger from '../utils/logger'
 
 dotenv.config({ path: './.env' })
 
-const connectedClients = new Map<string, string>()
+const app = express()
+const httpServer = createServer(app)
+app.use(express.json())
+app.use(createMatchRouter)
+app.use(updateMatchRouter)
 
-const io = new Server({
+const connectedClients = new Map<string, string>()
+connectToDatabase()
+
+const io = new Server(httpServer, {
     cors: {
         origin: '*',
     },
@@ -95,6 +107,20 @@ const io = new Server({
                             language: res.data.language
                         })
 
+                        const createMatchRes = await axios.post(`http://localhost:${port}/add-match`, {
+                            matchId,
+                            collaborators: [userId, otherUserId],
+                            questionId: matchSession.question.questionId,
+                        },  {
+                            validateStatus: (status) => status >= 200 && status < 500,
+                        })
+
+                        if (createMatchRes.status === 200) {
+                            logger.info(`Match ${matchId} has been stored in the database.`)
+                        } else {
+                            logger.error(`Error storing match ${matchId} in the database.`)
+                        }
+
                         activeMatches.delete(matchId)
                     } else {
                         logger.info(
@@ -152,7 +178,7 @@ const io = new Server({
 
     const port = parseInt(process.env.PORT || '3000', 10)
 
-    io.listen(port)
+    httpServer.listen(port)
     logger.info(`Server started on port ${port}`, {
         service: 'matching-service',
         timestamp: new Date().toISOString(),

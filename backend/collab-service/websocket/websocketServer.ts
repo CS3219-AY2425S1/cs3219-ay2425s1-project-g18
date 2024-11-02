@@ -21,7 +21,7 @@ export const setupCodeCollabWebSocketServer = (): void => {
   })
   
   server.listen(port, () => {
-    logger.info(`WebSocket server is set up and running  on port ${port}`)
+    logger.info(`WebSocket server is set up and running on port ${port}`)
   })
 
 };

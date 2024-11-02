@@ -4,6 +4,7 @@ import logger from '../utils/logger';
 
 export const verifyRoom = (req: Request, res: Response): void => {
     const { roomId, userId } = req.body;
+    console.log(roomId, userId)
 
     if (!roomId || !userId) {
         logger.info(`Room Validity Check: Insufficient information given.`)

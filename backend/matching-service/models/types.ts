@@ -40,6 +40,7 @@ export interface MatchSession {
 
 export interface CreateMatchRequest extends Request {
     body: {
+        matchId: string;
         collaborators: Types.ObjectId[];
         questionId: number;
     }
