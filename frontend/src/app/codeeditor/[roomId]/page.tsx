@@ -1,9 +1,10 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, PropsWithChildren  } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/authContext';
 import CollaborativeCodingPage from '../components/CollaborativeSpace';
 import axios from 'axios';
+import { LiveblocksProvider } from "@liveblocks/react";
 import { Question } from '../models/types'
 
 const CollabRoomPage = ({ params }: {
@@ -59,15 +60,17 @@ const CollabRoomPage = ({ params }: {
 
     return (
         <div className='flex flex-col flex-grow h-[calc(100vh-4rem)]'>
-            <CollaborativeCodingPage
-                initialCode='import math'
-                language={collabLanguage}
-                theme="vs-dark"
-                roomId={roomId}
-                userName={String(user?.name)}
-                question={collabQuestion}
-                matchId={matchId}
-            />
+            <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
+                <CollaborativeCodingPage
+                    initialCode='import math'
+                    language={collabLanguage}
+                    theme="vs-dark"
+                    roomId={roomId}
+                    userName={String(user?.name)}
+                    question={collabQuestion}
+                    matchId={matchId}
+                />
+            </LiveblocksProvider>
             {/* DO NOT REMOVE THIS PLEASE */} <span className='absolute left-0 top-0 opacity-0 select-none'>do not remove this {roomId}</span>
         </div>
     );

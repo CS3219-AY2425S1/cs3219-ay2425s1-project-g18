@@ -5,61 +5,70 @@ import Editor, { OnMount } from '@monaco-editor/react';
 import * as Y from 'yjs';
 import { MonacoBinding } from 'y-monaco';
 import { WebsocketProvider } from 'y-websocket';
+import { Awareness } from "y-protocols/awareness";
+import { LiveblocksYjsProvider } from "@liveblocks/yjs";
+import { useRoom } from "@liveblocks/react/suspense";
+import { Cursors } from "./Cursors";
 
 interface CodeEditorProps {
   ydoc: Y.Doc;
-  provider: WebsocketProvider;
+  collabprovider: WebsocketProvider;
   initialCode?: string;
   language?: string;
   theme?: 'light' | 'vs-dark';
+  userName: string;
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({
   ydoc,
-  provider,
+  collabprovider,
   initialCode = '',
   language = 'javascript',
   theme = 'light',
+  userName,
 }) => {
   const [editor, setEditor] = useState<any | null>(null)
   const [collabLanguage, setCollabLanguage] = useState<string | undefined>(language.toLowerCase())
-  const [collabProvider, setProvider] = useState<WebsocketProvider | null>(provider);
+  const [collabProvider, setCollabProvider] = useState<WebsocketProvider | null>(collabprovider);
+  const [yjsProvider, setYjsProvider] = useState<LiveblocksYjsProvider>();
   const [binding, setBinding] = useState<MonacoBinding | null>(null);
+  const room = useRoom();
 
-  const awareness = collabProvider?.awareness
+  let yProvider: LiveblocksYjsProvider | null = null;
 
-  if (awareness != null) {
-    awareness.on('change', () => {
-      // Whenever somebody updates their awareness information,
-      // we log all awareness information from all users.
-      // console.log(Array.from(awareness.getStates().values())) // we remove this for now because it clogs up the logs
-    })
+  if (yProvider == null && room != null) {
+    yProvider = new LiveblocksYjsProvider(room, ydoc);
+    setYjsProvider(yProvider);
   }
 
   useEffect(() => {
-    if (collabProvider == null || editor == null || collabLanguage == null) {
+    if (collabProvider == null || editor == null || collabLanguage == null || yjsProvider == null) {
       return
     }
     const ytext = ydoc.getText('monaco');
 
-    const binding = new MonacoBinding(ytext, editor.getModel()!, new Set([editor]), collabProvider?.awareness)
+    const binding = new MonacoBinding(
+      ytext,
+      editor.getModel()!,
+      new Set([editor]),
+      yjsProvider.awareness as unknown as Awareness
+    );
     setBinding(binding)
+
+    const awareness = yjsProvider.awareness;
+
+    // Set user awareness
+    awareness.setLocalStateField('user', {
+      name: userName,
+      color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+    });
+
     return () => {
-      binding.destroy()
+      ydoc.destroy();
+      binding.destroy();
+      collabProvider.destroy();
     }
-  }, [ydoc, collabProvider, editor, collabLanguage])
-
-
-  // useEffect(() => {
-  //   const ytext = ydoc.getText('monaco');
-  //   console.log('ytext length:', ytext.length);
-  //   console.log('initialCode:', initialCode);
-  //   // Initialize the shared text with initialCode
-  //   if (ytext.length === 0 && initialCode) {
-  //     ytext.insert(0, initialCode);
-  //   }
-  //   editor.setValue(ytext.toString());
-  // }, [ydoc, initialCode]);
+  }, [ydoc, collabProvider, editor, room, collabLanguage])
 
   const handleEditorDidMount: OnMount = (editor) => {
     setEditor(editor);
@@ -75,6 +84,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 
   return (
     <div className='h-full rounded-xl overflow-hidden pt-1 bg-purple-300'>
+      {yjsProvider ? <Cursors yProvider={yjsProvider} /> : null}
       <Editor
         height="100%"
         width="100%"
@@ -85,7 +95,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
           fontSize: 14,
           minimap: { enabled: false },
         }}
-      />
+        />
     </div>
   );
 };

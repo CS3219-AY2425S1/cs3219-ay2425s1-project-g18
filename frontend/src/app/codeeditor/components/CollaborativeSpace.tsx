@@ -7,7 +7,8 @@ import { MonacoBinding } from 'y-monaco'
 import CodeEditor from '@/app/codeeditor/components/CodeEditor';
 import Chat from '@/app/codeeditor/components/chat';
 import CodeOutput from '@/app/codeeditor/components/CodeOutput';
-import Editor from '@monaco-editor/react'
+import { createClient } from '@liveblocks/client';
+import { Room } from './Room';
 import VideoCall from '@/app/codeeditor/components/VideoCall';
 import { Badge } from "@/components/ui/badge";
 import axios from "axios";
@@ -28,30 +29,33 @@ const CollaborativeSpace: React.FC<CollaborativeSpaceProps> = ({
 }) => {
 
   const ydoc = useMemo(() => new Y.Doc(), [])
-  const [provider, setProvider] = useState<WebsocketProvider | null>(null);
+  const [collabProvider, setCollabProvider] = useState<WebsocketProvider | null>(null);
   const [output, setOutput] = useState(''); // To display output from running code
   const [greenOutputText, setGreenOutputText] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const { toast } = useToast();
+  const [client, setClient] = useState<any | null>(null);
+
+  const LIVEBLOCKS_PUBLIC_KEY = "pk_prod_Rj6f0D6SbjfIpsvZUCvrMYzzWTE9nmlMIt8-rptn6LAau4aMsgyZFxNNuk25btUI";
+  
+  if (!client) {
+    setClient(createClient({
+      publicApiKey: LIVEBLOCKS_PUBLIC_KEY,
+    }));
+  }
 
   useEffect(() => {
     // websocket link updated 
     const provider = new WebsocketProvider('ws://localhost:5004', roomId, ydoc);
-    setProvider(provider);
-    +
-      // Set user awareness
-      provider.awareness.setLocalStateField('user', {
-        name: userName,
-        color: '#' + Math.floor(Math.random() * 16777215).toString(16),
-      });
-
+    setCollabProvider(provider);
+    
     return () => {
       provider?.destroy();
       ydoc.destroy();
     };
   }, [ydoc]);
 
-  if (provider === null || ydoc === null) {
+  if (collabProvider === null || ydoc === null) {
     return <div>Loading...</div>;
   }
 
@@ -142,13 +146,16 @@ const CollaborativeSpace: React.FC<CollaborativeSpaceProps> = ({
 
         {/* Code Editor */}
         <div className="w-3/5 p-4 pl-0 overflow-hidden">
-          <CodeEditor
-            ydoc={ydoc}
-            provider={provider}
-            initialCode={initialCode}
-            language={language}
-            theme={theme}
-          />
+          <Room roomId={roomId}>
+              <CodeEditor
+                ydoc={ydoc}
+                collabprovider={collabProvider}
+                initialCode={initialCode}
+                language={language}
+                theme={theme}
+              userName={userName}
+              />
+          </Room>
         </div>
       </div>
 
@@ -168,7 +175,7 @@ const CollaborativeSpace: React.FC<CollaborativeSpaceProps> = ({
             </TabsList>
             <div className="flex-grow overflow-hidden mt-2">
               <TabsContent value="chat" className="h-full overflow-auto">
-                <Chat ydoc={ydoc} provider={provider} userName={userName} />
+                <Chat ydoc={ydoc} provider={collabProvider} userName={userName} />
               </TabsContent>
               <TabsContent value="run" className="h-full overflow-auto">
                 <CodeOutput
