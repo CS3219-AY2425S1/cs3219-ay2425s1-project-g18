@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Clock, User, Code } from 'lucide-react';
 import { convertSolvedStatus } from '@/utils/constant'
 import CodeViewDialog from '@/app/profile/components/CodeViewDialog'
+import { Eye } from 'lucide-react';
 
 const SubmissionList = ({ submissions }: { submissions: Submission[] }) => {
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | undefined>(undefined)
@@ -25,30 +26,37 @@ const SubmissionList = ({ submissions }: { submissions: Submission[] }) => {
                     </div>
                 )}
                 {submissions.map((submission) => (
-                    <Card key={submission.createdAt} className='h-fit w-full hover:cursor-pointer' onClick={() => setSelectedSubmission(submission)}>
+                    <Card key={submission.createdAt} className='h-fit w-full hover:cursor-pointer group' onClick={() => setSelectedSubmission(submission)}>
                         <CardContent className="py-4">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-6">
-                                    <Badge className={`${statusColors[convertSolvedStatus(submission.solved)]} text-xs text-white`}>
-                                        {convertSolvedStatus(submission.solved).toUpperCase()}
-                                    </Badge>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <Code className="w-4 h-4" />
+                                        <span className='text-sm text-gray-600'>Language: {submission.language}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4" />
+                                        <span className="text-sm text-gray-600">
+                                            Submitted: {new Date(submission.createdAt).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <div className='flex items-center gap-2'>
+                                        <span className="text-sm text-gray-500">Status: </span>
+                                        <Badge className={`${statusColors[convertSolvedStatus(submission.solved)]} text-xs text-white`}>
+                                            {convertSolvedStatus(submission.solved).toUpperCase()}
+                                        </Badge>
+                                    </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm font-semibold text-gray-500">{submission.testCasesPassed} / {submission.testCasesPassed}</span>
                                         <span className="text-sm text-gray-500">test cases passed</span>
                                     </div>
                                 </div>
-                                <div className="flex gap-6">
-                                    <div className="flex items-center gap-2">
-                                        <Code className="w-4 h-4" />
-                                        <span className='text-sm'>{submission.language}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4" />
-                                        <span className="text-sm text-gray-600">
-                                            {new Date(submission.createdAt).toLocaleString()}
-                                        </span>
-                                    </div>
-                                </div>
+                            </div>
+                            <div className="flex items-center justify-end mt-6 gap-2 text-gray-500 transition-all duration-100 group-hover:-translate-y-0.5">
+                                <Eye className="w-4 h-4 text-accent" />
+                                <span className="text-sm text-accent">View Code</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -134,7 +142,7 @@ export default function MatchDetailsPage({ params }: PageProps) {
             setMatch(match.data)
             setSubmissions(submissions)
 
-            const peerId = match.data.collaborators[0] != user?.id? match.data.collaborators[0] : match.data.collaborators[1]
+            const peerId = match.data.collaborators[0] != user?.id ? match.data.collaborators[0] : match.data.collaborators[1]
             const responsePeer = await fetch(`${historyServiceBaseUrl}/collaborators/${peerId}`,
                 {
                     method: 'GET',
