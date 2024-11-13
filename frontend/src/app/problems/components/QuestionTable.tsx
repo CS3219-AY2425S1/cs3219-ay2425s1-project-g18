@@ -1,4 +1,11 @@
-'use client'
+"use client"
+import {
+    ColumnDef,
+    flexRender,
+    getCoreRowModel,
+    getPaginationRowModel,
+    useReactTable,
+} from "@tanstack/react-table"
 import {
     Table,
     TableBody,
@@ -7,83 +14,83 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Ellipsis } from 'lucide-react'
-import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react";
-import QuestionDialog from "./QuestionDialog"
+import { Button } from "@/components/ui/button"
+import { createColumns } from "./columns"
 
-interface QuestionTableProps {
-    questions: any[]
+interface DataTableProps<TData, TValue> {
+    data: TData[]
     isAdmin: boolean
     handleOpenEditCard?: (questionId: number) => void
     handleOpenDeleteDialog?: (questionId: number) => void
 }
 
-const QuestionTable = (props: QuestionTableProps) => {
-    const { questions, isAdmin, handleOpenEditCard, handleOpenDeleteDialog } = props
+export function QuestionTable<TData extends Question, TValue>({
+    data,
+    isAdmin,
+    handleOpenEditCard,
+    handleOpenDeleteDialog,
+}: DataTableProps<TData, TValue>) {
+    const columns = createColumns<TData>({ isAdmin, handleOpenEditCard, handleOpenDeleteDialog })
+
+    const table = useReactTable({
+        data,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+    })
 
     return (
-        <Table className="table-auto">
-            <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                    <TableHead>Id</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Difficulty</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {questions.map((question: any, index: number) => (
-                    <TableRow key={index} className="h-20">
-                        <TableCell>{question.questionId}</TableCell>
-                        <TableCell><QuestionDialog question={question} /></TableCell>
-                        <TableCell>
-                            {question.description.length > 80
-                                ? `${question.description.slice(0, 80)}...`
-                                : question.description}
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex flex-wrap gap-2">
-                                {question.categories.map((c: string) => (
-                                    c && <Badge variant="category" key={c}>{c}</Badge>
+        <div>
+            <div>
+                <Table>
+                    <TableHeader>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => (
+                                    <TableHead key={header.id}>
+                                        {flexRender(
+                                            header.column.columnDef.header,
+                                            header.getContext()
+                                        )}
+                                    </TableHead>
                                 ))}
-                            </div>
-                        </TableCell>
-                        <TableCell><Badge variant={question.difficulty.toLowerCase()}>{question.difficulty}</Badge></TableCell>
-                        <TableCell>
-                            {isAdmin &&
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Ellipsis className="hover:cursor-pointer" />
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-56">
-                                        {handleOpenEditCard && (
-                                            <DropdownMenuItem onSelect={() => handleOpenEditCard(question.questionId)}>
-                                                Edit Question
-                                            </DropdownMenuItem>
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows.map((row) => (
+                            <TableRow key={row.id} className="h-20">
+                                {row.getVisibleCells().map((cell) => (
+                                    <TableCell key={cell.id}>
+                                        {flexRender(
+                                            cell.column.columnDef.cell,
+                                            cell.getContext()
                                         )}
-                                        {handleOpenDeleteDialog && (
-                                            <DropdownMenuItem onSelect={() => handleOpenDeleteDialog(question.questionId)}>
-                                                Delete Question
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>}
-                        </TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+            <div className="flex items-center justify-end space-x-2 py-4">
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                >
+                    Previous
+                </Button>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                >
+                    Next
+                </Button>
+            </div>
+        </div>
     )
 }
-
-export default QuestionTable

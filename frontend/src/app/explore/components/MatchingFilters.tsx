@@ -38,12 +38,9 @@ const MatchingFilters = () => {
         { label: "Python", value: "Python" },
         { label: "JavaScript", value: "JavaScript" },
         { label: "Java", value: "Java" },
-        { label: "C++", value: "C++" },
-        { label: "C#", value: "C#" },
-        { label: "Ruby", value: "Ruby" },
+        { label: "C++", value: "Cpp" },
+        { label: "C", value: "C" },
         { label: "Go", value: "Go" },
-        { label: "Kotlin", value: "Kotlin" },
-        { label: "Swift", value: "Swift" },
         { label: "TypeScript", value: "TypeScript" },
     ]
     const categoriesList = [

@@ -41,4 +41,7 @@ export const languageExtensions = new Map([
     ['python', 'py'],
     ['java', 'java'],
     ['c', 'c'],
+    ['c++', 'cpp'],
+    ['go', 'go'],
+    ['typescript', 'ts']
 ])

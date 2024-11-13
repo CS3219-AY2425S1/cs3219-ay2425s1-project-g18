@@ -127,7 +127,7 @@ const SuccessMatchInfo = (props: SuccessMatchInfoProps) => {
                         <div>
                             <h5 className="text-sm mb-2">Language:</h5>
                             <div>
-                                <h4 className="text-lg font-semibold">{match.language}</h4>
+                                <h4 className="text-lg font-semibold">{match.language == 'Cpp' ? 'C++' : match.language}</h4>
                             </div>
                         </div>
                         {/* Categories */}

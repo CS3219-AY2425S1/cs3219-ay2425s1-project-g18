@@ -6,6 +6,7 @@ import { router as getMatchHistoryRoute } from "../get-match-history/getMatchHis
 import { router as getSubmissionsRoute } from "../get-submissions/getSubmissionsRoute"
 import { router as getUserRoute } from "../get-user/getUserRoute"
 import { router as getMatchRoute } from "../get-match/getMatchRoute"
+import { router as getStatsRoute } from "../get-stats/getStatsRoute"
 
 dotenv.config({ path: './.env' })
 
@@ -28,6 +29,7 @@ app.use(getMatchHistoryRoute)
 app.use(getSubmissionsRoute)
 app.use(getUserRoute)
 app.use(getMatchRoute)
+app.use(getStatsRoute)
 
 const port = process.env.PORT || 3000
 

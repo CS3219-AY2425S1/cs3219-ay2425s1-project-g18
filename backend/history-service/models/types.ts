@@ -11,3 +11,9 @@ export interface GetSubmissionRequest extends Request {
         matchId: string
     }
 }
+
+export interface UserStatsMap {
+    totalQuestions: number,
+    difficulty: Record<string, number>,
+    categories: Record<string, number>
+}

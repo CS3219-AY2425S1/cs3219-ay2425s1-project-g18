@@ -1,49 +1,102 @@
-'use client'
+"use client"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    ColumnDef,
+    flexRender,
+    getCoreRowModel,
+    getPaginationRowModel,
+    useReactTable,
+} from "@tanstack/react-table"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table"
-import { ArchiveX } from 'lucide-react';
-import Link from 'next/link';
+import { Button } from "@/components/ui/button"
 
-interface HistoryTableProps {
-  matches: PastMatch[]
+interface DataTableProps<TData, TValue> {
+    columns: ColumnDef<TData, TValue>[]
+    data: TData[]
 }
 
-const HistoryTable = (props: HistoryTableProps) => {
-  const { matches } = props
+export function HistoryTable<TData, TValue>({
+    columns,
+    data,
+}: DataTableProps<TData, TValue>) {
+    const table = useReactTable({
+        data,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+    })
 
-  return (
-    matches.length === 0 ? (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2">
-        <ArchiveX size={32} className="text-gray-400" />
-        <p className="text-gray-400 text-sm font-semibold">No history found</p>
-      </div>
-    ) : (
-      <Table className="table-auto">
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead>Question</TableHead>
-            <TableHead>Partner</TableHead>
-            <TableHead>Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {matches.map((match: any, index: number) => (
-            <TableRow key={index} className="h-20 hover:bg-transparent">
-              <TableCell><Link key={match.matchId} href={`/profile/history/${match.matchId}`}>{match.questionTitle}</Link></TableCell>
-              <TableCell>{match.collaborator}</TableCell>
-              <TableCell>{new Date(match?.createdAt).toDateString()}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    return (
+        <div>
+            <div className="rounded-md border">
+                <Table className="table-auto">
+                    <TableHeader>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                                {headerGroup.headers.map((header) => {
+                                    return (
+                                        <TableHead key={header.id}>
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(
+                                                    header.column.columnDef.header,
+                                                    header.getContext()
+                                                )}
+                                        </TableHead>
+                                    )
+                                })}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow
+                                    className="h-16 hover:bg-transparent"
+                                    key={row.id}
+                                    data-state={row.getIsSelected() && "selected"}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="h-24 text-center">
+                                    No results.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+            <div className="flex items-center justify-end space-x-2 py-4">
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                >
+                    Previous
+                </Button>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                >
+                    Next
+                </Button>
+            </div>
+        </div>
     )
-  )
 }
-
-export default HistoryTable
