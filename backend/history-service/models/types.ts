@@ -13,6 +13,7 @@ export interface GetSubmissionRequest extends Request {
 }
 
 export interface UserStatsMap {
+    totalQuestions: number,
     difficulty: Record<string, number>,
     categories: Record<string, number>
 }
