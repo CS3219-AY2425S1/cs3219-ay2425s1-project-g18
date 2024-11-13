@@ -9,9 +9,8 @@ import {
     CameraOff,
     Mic,
     MicOff,
-    Maximize2,
-    Minimize2,
-    RefreshCw
+    RefreshCw,
+    UserCircle2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/authContext';
@@ -30,18 +29,107 @@ interface PeerConnection {
 const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
-    const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-    const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+    const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+    const [isVideoEnabled, setIsVideoEnabled] = useState(false);
     const [connections, setConnections] = useState(new Set<string>());
     const [isConnectedToServer, setIsConnectedToServer] = useState(false);
     const [peerStreams, setPeerStreams] = useState<Map<string, MediaStream>>(new Map());
+    const [hasAudioDevice, setHasAudioDevice] = useState(false);
+    const [hasVideoDevice, setHasVideoDevice] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
+
     const { toast } = useToast();
-    const { user, isAuthenticated } = useAuth();
+    const { user } = useAuth();
 
     const myVideo = useRef<HTMLVideoElement>(null);
     const peerConnections = useRef<Record<string, PeerConnection>>({});
-    const reconnectAttempts = useRef(0);
-    const maxReconnectAttempts = 5;
+
+    const initializeMedia = useCallback(async () => {
+        try {
+            // Check available devices first
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const hasVideo = devices.some(device => device.kind === 'videoinput');
+            const hasAudio = devices.some(device => device.kind === 'audioinput');
+
+            setHasVideoDevice(hasVideo);
+            setHasAudioDevice(hasAudio);
+
+            // Try to get whatever media is available
+            if (!hasVideo && !hasAudio) {
+                console.log('No media devices available');
+                setIsInitialized(true);
+                return null;
+            }
+
+            const constraints = {
+                video: hasVideo ? true : false,
+                audio: hasAudio ? true : false
+            };
+
+            const currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('Got user media stream:', constraints);
+
+            // Set initial enabled states based on what we got
+            setIsVideoEnabled(hasVideo);
+            setIsAudioEnabled(hasAudio);
+
+            if (myVideo.current) {
+                myVideo.current.srcObject = currentStream;
+            }
+
+            setIsInitialized(true);
+            return currentStream;
+        } catch (error) {
+            console.error('Media error:', error);
+            setIsInitialized(true);
+            return null;
+        }
+    }, []);
+
+    // Initialize socket and media
+    useEffect(() => {
+        let currentStream: MediaStream | null = null;
+
+        const init = async () => {
+            // First get media stream
+            currentStream = await initializeMedia();
+            if (currentStream) {
+                setStream(currentStream);
+            }
+
+            // Then connect socket
+            const wsProtocol = process.env.NEXT_PUBLIC_WEBSOCKET_PROTOCOL;
+            const collabBaseUrl = process.env.NEXT_PUBLIC_CODE_COLLAB_URL?.replace(/^https?:\/\//, '');
+            const videoSocketUrl = `${wsProtocol}://${collabBaseUrl}`;
+
+            console.log('Connecting to socket URL:', videoSocketUrl);
+
+            const newSocket = io(videoSocketUrl, {
+                path: '/video-call',
+                transports: ['websocket'],
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+            });
+
+            setSocket(newSocket);
+
+            return () => {
+                console.log('Cleaning up...');
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+                Object.values(peerConnections.current).forEach(({ connection }) => {
+                    connection.close();
+                });
+                setPeerStreams(new Map());
+                setConnections(new Set());
+                newSocket.close();
+            };
+        };
+
+        init();
+    }, [initializeMedia]);
 
     const createPeerConnection = useCallback(async (peerId: string, username: string) => {
         console.log(`Creating peer connection for ${username} (${peerId})`);
@@ -76,7 +164,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
             });
         }
 
-
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -85,7 +172,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
         };
 
         const peerConnection = new RTCPeerConnection(configuration);
-        console.log('RTCPeerConnection created');
 
         // Handle incoming streams
         peerConnection.ontrack = (event) => {
@@ -93,7 +179,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
             const [remoteStream] = event.streams;
 
             setPeerStreams(prev => {
-                // Clean up any existing streams for this username
                 const newStreams = new Map(prev);
                 for (const [existingPeerId, _] of newStreams) {
                     if (peerConnections.current[existingPeerId]?.username === username && existingPeerId !== peerId) {
@@ -101,7 +186,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
                     }
                 }
                 newStreams.set(peerId, remoteStream);
-                console.log(`Added stream for ${username} to peer streams`);
                 return newStreams;
             });
 
@@ -110,9 +194,8 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
             )).add(peerId));
         };
 
-        // Add local stream tracks
+        // Add local stream tracks if available
         if (stream) {
-            console.log(`Adding ${stream.getTracks().length} local tracks to connection for ${username}`);
             stream.getTracks().forEach(track => {
                 peerConnection.addTrack(track, stream);
             });
@@ -120,7 +203,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
 
         peerConnection.onicecandidate = (event) => {
             if (event.candidate && socket) {
-                console.log(`Sending ICE candidate to ${username}`);
                 socket.emit('ice-candidate', {
                     candidate: event.candidate,
                     peerId,
@@ -137,43 +219,18 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
         };
 
         peerConnections.current[peerId] = { connection: peerConnection, username };
-        console.log(`Stored peer connection for ${username}`);
-
         return peerConnections.current[peerId];
     }, [stream, socket, roomId]);
 
-    const initializeMedia = useCallback(async () => {
-        try {
-            const currentStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-
-            console.log('Got user media stream');
-            setStream(currentStream);
-            if (myVideo.current) {
-                myVideo.current.srcObject = currentStream;
-            }
-            return currentStream;
-        } catch (error) {
-            console.error('Media error:', error);
-            toast({
-                variant: "destructive",
-                title: "Camera/Microphone Error",
-                description: error instanceof Error ? error.message : 'Failed to access media devices',
-            });
-            return null;
-        }
-    }, []);
-
     // Handle socket events
     useEffect(() => {
-        if (!socket || !stream) return; // Don't set up events until we have both socket and stream
+        if (!socket || !isInitialized) return; // Wait for initialization instead of stream
 
         socket.on('connect', async () => {
             console.log('Connected to signaling server with socket ID:', socket.id);
             setIsConnectedToServer(true);
-            reconnectAttempts.current = 0;
+            // Join room immediately after connection
+            console.log('Joining room:', roomId, 'as user:', userName);
             socket.emit('join-room', { roomId, username: userName, userId: user?.id || '' });
         });
 
@@ -204,10 +261,9 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
         });
 
         socket.on('user-disconnected', async ({ socketId, disconnectedUser }) => {
-            console.log(`Cleaning up disconnected user ${disconnectedUser} from socket ${socketId}`)
+            console.log(`User disconnected: ${disconnectedUser?.username}`);
             for (const [peerId, connection] of Object.entries(peerConnections.current)) {
                 if (connection.username === disconnectedUser?.username || peerId === socketId) {
-                    console.log(`Cleaning up connection for ${connection.username} (${peerId})`);
                     connection.connection.close();
                     delete peerConnections.current[peerId];
                     setPeerStreams(prev => {
@@ -222,7 +278,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
                     });
                 }
             }
-        })
+        });
 
         socket.on('offer', async ({ offer, peerId, username }) => {
             try {
@@ -255,7 +311,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
 
         socket.on('ice-candidate', async ({ candidate, peerId }) => {
             try {
-                console.log('Received ICE candidate from peer:', peerId);
                 const peerConnection = peerConnections.current[peerId];
                 if (peerConnection && peerConnection.connection.remoteDescription) {
                     await peerConnection.connection.addIceCandidate(new RTCIceCandidate(candidate));
@@ -275,50 +330,10 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
             socket.off('answer');
             socket.off('ice-candidate');
         };
-    }, [socket, stream, createPeerConnection, roomId, userName]);
-
-    // Initialize socket and media
-    useEffect(() => {
-        let currentStream: MediaStream | null = null;
-
-        const init = async () => {
-            // First get media stream
-            currentStream = await initializeMedia();
-            if (!currentStream) return;
-
-            setStream(currentStream);
-
-            // Then connect socket
-            const wsProtocol = process.env.NEXT_PUBLIC_WEBSOCKET_PROTOCOL;
-            const collabBaseUrl = process.env.NEXT_PUBLIC_CODE_COLLAB_URL?.replace(/^https?:\/\//, '');
-            const videoSocketUrl = `${wsProtocol}://${collabBaseUrl}`;
-            const newSocket = io(videoSocketUrl, {
-                path: '/video-call',
-                transports: ['websocket'],
-                reconnection: true,
-                reconnectionAttempts: 5,
-                reconnectionDelay: 1000,
-            });
-
-            setSocket(newSocket);
-
-            return () => {
-                console.log('Cleaning up...');
-                currentStream?.getTracks().forEach(track => track.stop());
-                Object.values(peerConnections.current).forEach(({ connection }) => {
-                    connection.close();
-                });
-                setPeerStreams(new Map());
-                setConnections(new Set());
-                newSocket.close();
-            };
-        };
-
-        init();
-    }, []);
+    }, [socket, isInitialized, createPeerConnection, roomId, userName, user?.id]);
 
     return (
-        <Card className='h-full flex flex-col'>
+        <Card className='h-full flex flex-col flex-grow'>
             <CardHeader className="p-2 flex-shrink-0">
                 <CardTitle className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-2">
@@ -327,29 +342,25 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
                             className={`w-2 h-2 rounded-full ${isConnectedToServer ? 'bg-green-500' : 'bg-red-500'}`}
                             title={isConnectedToServer ? 'Connected' : 'Disconnected'}
                         />
-                        {!isConnectedToServer && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => { }}
-                                className="h-6 w-6 p-0"
-                            >
-                                <RefreshCw className="h-3 w-3" />
-                            </Button>
-                        )}
                     </div>
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-2 flex-grow flex flex-col">
                 <div className='grid grid-cols-2 gap-2 flex-grow overflow-auto'>
                     <div className="relative rounded-lg overflow-hidden bg-secondary aspect-video">
-                        <video
-                            ref={myVideo}
-                            muted
-                            autoPlay
-                            playsInline
-                            className="w-full h-full object-cover"
-                        />
+                        {stream && isVideoEnabled ? (
+                            <video
+                                ref={myVideo}
+                                muted
+                                autoPlay
+                                playsInline
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-secondary">
+                                <UserCircle2 className="w-16 h-16 text-muted-foreground" />
+                            </div>
+                        )}
                         <div className="absolute bottom-1 left-1 bg-black/50 text-white px-1 py-0.5 rounded text-xs">
                             {userName} (You)
                         </div>
@@ -357,16 +368,20 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
 
                     {Array.from(peerStreams.entries()).map(([peerId, peerStream]) => (
                         <div key={peerId} className="relative rounded-lg overflow-hidden bg-secondary aspect-video">
-                            <video
-                                autoPlay
-                                playsInline
-                                className="w-full h-full object-cover"
-                                ref={el => {
-                                    if (el) {
-                                        el.srcObject = peerStream;
-                                    }
-                                }}
-                            />
+                            {peerStream.getVideoTracks().length > 0 ? (
+                                <video
+                                    autoPlay
+                                    playsInline
+                                    className="w-full h-full object-cover"
+                                    ref={el => {
+                                        if (el) el.srcObject = peerStream;
+                                    }}
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-secondary">
+                                    <UserCircle2 className="w-16 h-16 text-muted-foreground" />
+                                </div>
+                            )}
                             <div className="absolute bottom-1 left-1 bg-black/50 text-white px-1 py-0.5 rounded text-xs">
                                 {peerConnections.current[peerId]?.username || `User ${peerId}`}
                             </div>
@@ -375,50 +390,54 @@ const VideoCall: React.FC<VideoCallProps> = ({ userName, roomId }) => {
                 </div>
 
                 <div className="flex justify-center gap-2 mt-2 flex-shrink-0">
-                    <Button
-                        variant={isAudioEnabled ? "outline" : "destructive"}
-                        size="sm"
-                        onClick={() => {
-                            if (stream) {
-                                stream.getAudioTracks().forEach(track => {
-                                    track.enabled = !isAudioEnabled;
-                                });
-                                setIsAudioEnabled(!isAudioEnabled);
-                                toast({
-                                    title: isAudioEnabled ? "Microphone Muted" : "Microphone Unmuted",
-                                });
+                    {hasAudioDevice && (
+                        <Button
+                            variant={isAudioEnabled ? "outline" : "destructive"}
+                            size="sm"
+                            onClick={() => {
+                                if (stream) {
+                                    stream.getAudioTracks().forEach(track => {
+                                        track.enabled = !isAudioEnabled;
+                                    });
+                                    setIsAudioEnabled(!isAudioEnabled);
+                                    toast({
+                                        title: isAudioEnabled ? "Microphone Muted" : "Microphone Unmuted",
+                                    });
+                                }
+                            }}
+                        >
+                            {isAudioEnabled ?
+                                <Mic className="h-3 w-3" /> :
+                                <MicOff className="h-3 w-3" />
                             }
-                        }}
-                    >
-                        {isAudioEnabled ?
-                            <Mic className="h-3 w-3" /> :
-                            <MicOff className="h-3 w-3" />
-                        }
-                    </Button>
-                    <Button
-                        variant={isVideoEnabled ? "outline" : "destructive"}
-                        size="sm"
-                        onClick={() => {
-                            if (stream) {
-                                stream.getVideoTracks().forEach(track => {
-                                    track.enabled = !isVideoEnabled;
-                                });
-                                setIsVideoEnabled(!isVideoEnabled);
-                                toast({
-                                    title: isVideoEnabled ? "Camera Turned Off" : "Camera Turned On",
-                                });
+                        </Button>
+                    )}
+                    {hasVideoDevice && (
+                        <Button
+                            variant={isVideoEnabled ? "outline" : "destructive"}
+                            size="sm"
+                            onClick={() => {
+                                if (stream) {
+                                    stream.getVideoTracks().forEach(track => {
+                                        track.enabled = !isVideoEnabled;
+                                    });
+                                    setIsVideoEnabled(!isVideoEnabled);
+                                    toast({
+                                        title: isVideoEnabled ? "Camera Turned Off" : "Camera Turned On",
+                                    });
+                                }
+                            }}
+                        >
+                            {isVideoEnabled ?
+                                <Camera className="h-3 w-3" /> :
+                                <CameraOff className="h-3 w-3" />
                             }
-                        }}
-                    >
-                        {isVideoEnabled ?
-                            <Camera className="h-3 w-3" /> :
-                            <CameraOff className="h-3 w-3" />
-                        }
-                    </Button>
+                        </Button>
+                    )}
                 </div>
             </CardContent>
         </Card>
-    )
+    );
 };
 
 export default VideoCall;
