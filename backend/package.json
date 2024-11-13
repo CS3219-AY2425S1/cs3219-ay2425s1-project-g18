@@ -1,0 +1,13 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "concurrently \"cd question-service && npm run build\" \"cd user-service && npm run build\" \"cd matching-service && npm run build\" \"cd collab-service && npm run build\" \"cd code-execution-service && npm run build\" \"cd history-service && npm run build\"",
+    "dev": "concurrently \"cd question-service && npm run dev\" \"cd user-service && npm run dev\" \"cd matching-service && npm run dev\" \"cd collab-service && npm run dev\" \"cd code-execution-service && npm run dev\" \"cd history-service && npm run dev\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

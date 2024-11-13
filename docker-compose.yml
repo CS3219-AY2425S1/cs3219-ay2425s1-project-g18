@@ -1,0 +1,158 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    command: ["npm", "run", "dev"]
+    networks:
+      - peerprep-network
+
+  user_service:
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/user-service/.env
+    volumes:
+      - ./backend/user-service:/app
+      - user-service-node-modules:/app/node_modules
+    command: ["npm", "run", "dev"]
+    environment:
+      - NODE_ENV=development
+    networks:
+      - peerprep-network
+
+  question_service:
+    build:
+      context: ./backend/question-service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    env_file:
+      - ./backend/question-service/.env
+    volumes:
+      - ./backend/question-service:/app
+      - question-service-node-modules:/app/node_modules
+    command: ["npm", "run", "dev"]
+    environment:
+      - NODE_ENV=development
+    networks:
+      - peerprep-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - peerprep-network
+
+  matching_service:
+    build:
+      context: ./backend/matching-service
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
+    env_file:
+      - ./backend/matching-service/.env
+    volumes:
+      - ./backend/matching-service:/app
+      - matching-service-node-modules:/app/node_modules
+    command: ["npm", "run", "dev"]
+    environment:
+      - NODE_ENV=development
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - rabbitmq
+    networks:
+      - peerprep-network
+
+  collab_service:
+    build:
+      context: ./backend/collab-service
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003"
+      - "5004:5004"
+    env_file:
+      - ./backend/collab-service/.env
+    volumes:
+      - ./backend/collab-service:/app
+      - collab-service-node-modules:/app/node_modules
+    command: ["npm", "run", "dev"]
+    environment:
+      - NODE_ENV=development
+    networks:
+      - peerprep-network
+
+  code_execution_service:
+    build:
+      context: ./backend/code-execution-service
+      dockerfile: Dockerfile
+    ports:
+      - "5005:5005"
+    env_file:
+      - ./backend/code-execution-service/.env
+    volumes:
+      - ./backend/code-execution-service:/app
+      - code-execution-service-node-modules:/app/node_modules
+    command: ["npm", "run", "dev"]
+    environment:
+      - NODE_ENV=development
+    networks:
+      - peerprep-network
+  
+  history_service:
+    build:
+      context: ./backend/history-service
+      dockerfile: Dockerfile
+    ports:
+      - "5006:5006"
+    env_file:
+      - ./backend/history-service/.env
+    volumes:
+      - ./backend/history-service:/app
+      - history-service-node-modules:/app/node_modules
+    command: ["npm", "run", "dev"]
+    environment:
+      - NODE_ENV=development
+    networks:
+      - peerprep-network
+
+networks:
+  peerprep-network:
+    driver: bridge
+
+volumes:
+  frontend-node-modules:
+    driver: local
+  user-service-node-modules:
+    driver: local
+  question-service-node-modules:
+    driver: local
+  matching-service-node-modules:
+    driver: local
+  collab-service-node-modules:
+    driver: local
+  rabbitmq-data:
+    driver: local
+  code-execution-service-node-modules:
+    driver: local
+  history-service-node-modules:
+    driver: local

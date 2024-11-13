@@ -1,0 +1,33 @@
+{
+    "name": "collab-service",
+    "version": "1.0.0",
+    "main": "server/index.js",
+    "scripts": {
+        "build": "tsc",
+        "dev": "nodemon --exec ts-node server/index.ts",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "devDependencies": {
+        "@types/cors": "^2.8.17",
+        "@types/express": "^5.0.0",
+        "@types/ws": "^8.5.12",
+        "nodemon": "^3.1.7",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.6.3"
+    },
+    "dependencies": {
+        "@types/socket.io": "^3.0.2",
+        "cors": "^2.8.5",
+        "crypto": "^1.0.1",
+        "dotenv": "^16.4.5",
+        "express": "^4.21.1",
+        "socket.io": "^4.8.1",
+        "winston": "^3.15.0",
+        "ws": "^8.18.0",
+        "y-websocket": "^2.0.4",
+        "yjs": "^13.6.20"
+    }
+}
