@@ -163,6 +163,7 @@ const CollaborativeSpace: React.FC<CollaborativeSpaceProps> = ({
       console.log('Code submitted successfully:', response.data);
       setGreenOutputText(true);
       setOutput('Code has been successfully submitted to the server.')
+      setErrorOutput('');
       toast({
         title: "Code submitted",
         description: "You have successfully uploaded your code",
