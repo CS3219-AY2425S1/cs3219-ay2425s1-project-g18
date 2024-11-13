@@ -1,22 +1,5 @@
 'use client'
 import { Button } from "@/components/ui/button"
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Ellipsis } from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react";

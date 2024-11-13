@@ -25,8 +25,6 @@ const Navbar: React.FC = () => {
     // Routes for those who are logged in
     const authRoutes = [
         { label: 'Explore', href: '/explore' },
-        { label: 'Codespace', href: '/codespace' },
-        { label: 'Dashboard', href: '/dashboard' },
         { label: 'Problems', href: '/problems' },
     ];
     // Routes for those who are not logged in
