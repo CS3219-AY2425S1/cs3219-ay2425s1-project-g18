@@ -7,6 +7,8 @@ import { Separator } from "@/components/ui/separator";
 import { difficulties } from '@/utils/constant';
 import HistoryTable from '@/app/profile/components/HistoryTable';
 import { FolderClock as HistoryIcon, Loader2 } from 'lucide-react';
+import { MatchHistory, columns } from "./components/columns"
+import { DataTable } from "./components/data-table"
 
 interface UserStatistics {
     totalQuestions: number,
@@ -206,7 +208,7 @@ const ProfilePage: React.FC = () => {
                         {isLoadingMatches ? (
                             <HistorySkeleton />
                         ) : (
-                            <HistoryTable matches={pastMatches} />
+                            <DataTable columns={columns} data={pastMatches} />
                         )}
                     </div>
                 </div>

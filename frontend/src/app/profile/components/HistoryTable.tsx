@@ -28,7 +28,6 @@ const HistoryTable = (props: HistoryTableProps) => {
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead>Question</TableHead>
-            <TableHead>Partner</TableHead>
             <TableHead>Date</TableHead>
           </TableRow>
         </TableHeader>
@@ -36,7 +35,6 @@ const HistoryTable = (props: HistoryTableProps) => {
           {matches.map((match: any, index: number) => (
             <TableRow key={index} className="h-20 hover:bg-transparent">
               <TableCell><Link key={match.matchId} href={`/profile/history/${match.matchId}`}>{match.questionTitle}</Link></TableCell>
-              <TableCell>{match.collaborator}</TableCell>
               <TableCell>{new Date(match?.createdAt).toDateString()}</TableCell>
             </TableRow>
           ))}
