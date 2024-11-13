@@ -35,6 +35,7 @@ const CollaborativeSpace: React.FC<CollaborativeSpaceProps> = ({
   const [provider, setProvider] = useState<WebsocketProvider | null>(null);
   const { user, isAuthenticated } = useAuth();
   const [output, setOutput] = useState(''); // To display output from running code
+  const [errorOutput, setErrorOutput] = useState(''); // To display error output from running code
   const [greenOutputText, setGreenOutputText] = useState(false);
   const [isRunLoading, setIsRunLoading] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
@@ -112,14 +113,21 @@ const CollaborativeSpace: React.FC<CollaborativeSpaceProps> = ({
         questionId: question.questionId,
         code: ydoc.getText('monaco'),
         language,
+      }, {
+        validateStatus: (status) => status >= 200 && status < 500,
       });
+
+      if (response.status === 400) {
+        setGreenOutputText(false);
+        setDisplayedTestCases([]);
+        setErrorOutput(`${response.data.error}`);
+        setOutput('');
+      }
       const testCasesPassed: string = response.data.testCasesPassed;
       const testCasesTotal: string = response.data.testCasesTotal;
       const testCaseResults = response.data.results;
       const testCasesToShow = testCaseResults.slice(0, 2);
       setDisplayedTestCases(testCasesToShow);
-
-
 
       if (testCasesPassed == testCasesTotal) {
         setGreenOutputText(true);
@@ -127,6 +135,7 @@ const CollaborativeSpace: React.FC<CollaborativeSpaceProps> = ({
         setGreenOutputText(false);
       }
       setOutput(`Test cases passed: ${testCasesPassed}/${testCasesTotal}`);
+      setErrorOutput('');
       console.log(response.data)
     } catch (error) {
       console.error('Error running code:', error);
@@ -251,6 +260,7 @@ const CollaborativeSpace: React.FC<CollaborativeSpaceProps> = ({
               <TabsContent value="run" className="h-full overflow-auto">
                 <CodeOutput
                   outputText={output}
+                  errorOutputText={errorOutput}
                   allPassed={greenOutputText}
                   handleRunCode={handleRunCode}
                   handleSubmitCode={handleSubmitCode}
