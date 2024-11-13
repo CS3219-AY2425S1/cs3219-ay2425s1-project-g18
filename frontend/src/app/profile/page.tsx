@@ -5,10 +5,9 @@ import { useAuth } from '@/context/authContext';
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator";
 import { difficulties } from '@/utils/constant';
-import HistoryTable from '@/app/profile/components/HistoryTable';
 import { FolderClock as HistoryIcon, Loader2 } from 'lucide-react';
-import { MatchHistory, columns } from "./components/columns"
-import { DataTable } from "./components/data-table"
+import { columns } from "./components/columns"
+import { HistoryTable } from "./components/HistoryTable"
 
 interface UserStatistics {
     totalQuestions: number,
@@ -200,7 +199,7 @@ const ProfilePage: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <div className="flex flex-col flex-1 bg-white rounded-lg p-6 shadow-lg">
+                    <div className="flex flex-col flex-1 bg-white rounded-lg p-6 shadow-lg gap-4">
                         <div className="flex items-center gap-2 mb-2">
                             <HistoryIcon size={20} />
                             <h2 className="text-md font-semibold">History</h2>
@@ -208,7 +207,7 @@ const ProfilePage: React.FC = () => {
                         {isLoadingMatches ? (
                             <HistorySkeleton />
                         ) : (
-                            <DataTable columns={columns} data={pastMatches} />
+                            <HistoryTable columns={columns} data={pastMatches} />
                         )}
                     </div>
                 </div>
