@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import QuestionTable from "../problems/components/QuestionTable";
 import MatchingFilters from "./components/MatchingFilters";
 import { Notebook } from 'lucide-react';
+import { getAccessToken } from "../../utils/checkAuth";
 
 export default function ExplorePage() {
     const [questions, setQuestions] = useState([]);
@@ -10,7 +11,12 @@ export default function ExplorePage() {
     const fetchQuestions = async () => {
         try {
             const questionServiceBaseUrl = process.env.NEXT_PUBLIC_QUESTION_SERVICE_URL;
-            const response = await fetch(`${questionServiceBaseUrl}/get-questions`)
+            const response = await fetch(`${questionServiceBaseUrl}/get-questions`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`
+                }
+            })
             if (!response.ok) {
                 throw new Error('Failed to fetch questions')
             }

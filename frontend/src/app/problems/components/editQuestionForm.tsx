@@ -30,6 +30,7 @@ import {
 
 import { Textarea } from "@/components/ui/textarea"
 import { useEffect, useState } from "react";
+import { getAccessToken } from "@/utils/checkAuth";
 
 const singleQuoteStringSchema = z
   .string()
@@ -81,6 +82,9 @@ const EditQuestionForm: React.FC<EditQuestionFormProps> = ({ questionId, onClose
         try {
           const response = await fetch(`${questionServiceBaseUrl}/get-questions?questionId=${questionId}`, {
             method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${getAccessToken()}`
+            }
           });
 
           const data = await response.json();

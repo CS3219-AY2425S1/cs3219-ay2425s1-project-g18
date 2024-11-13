@@ -15,6 +15,7 @@ interface UserInfo {
 
 interface LoginResponse {
     token: string;
+    accessToken: string;
     user: UserInfo;
 }
 
@@ -31,13 +32,13 @@ export const loginUser = async ({ email, password }: LoginInput): Promise<LoginR
         throw new Error('Invalid email or password');
     }
 
-    const token = generateToken(user);
+    const refreshToken = generateToken(user);
+    const accessToken = generateToken(user, '5s') // testing
     
     const userInfo: UserInfo = {
         name: user.name,
         email: user.email,
-        
     };
 
-    return { token, user: userInfo };
+    return { token: refreshToken, accessToken: accessToken, user: userInfo };
 };

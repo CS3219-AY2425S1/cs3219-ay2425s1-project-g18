@@ -2,11 +2,11 @@ import jwt from 'jsonwebtoken';
 import { config } from '../../config/envConfig'; // centralized config
 import { IUser } from '../../models/user';
 
-export const generateToken = (user: IUser): string => {
+export const generateToken = (user: IUser, expiryTime: string = config.jwtExpiresIn): string => {
     return jwt.sign(
         { userId: user._id, email: user.email },
         config.jwtSecret,
-        { expiresIn: config.jwtExpiresIn }
+        { expiresIn: expiryTime }
     );
 };
 

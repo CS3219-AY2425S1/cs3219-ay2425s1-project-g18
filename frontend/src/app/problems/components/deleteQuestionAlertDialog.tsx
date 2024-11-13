@@ -9,8 +9,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog"
-  import { Button } from "@/components/ui/button"
-   
+import { Button } from "@/components/ui/button"
+import { getAccessToken } from "@/utils/checkAuth" 
 
 interface DeleteQuestionAlertDialogProps {
     questionId: number,
@@ -21,13 +21,13 @@ interface DeleteQuestionAlertDialogProps {
 const questionServiceBaseUrl = process.env.NEXT_PUBLIC_QUESTION_SERVICE_URL;
 
 const DeleteQuestionAlertDialog: React.FC<DeleteQuestionAlertDialogProps> = ({ questionId, onClose, refetch }) => {
-
         async function onConfirm() {
             try {
                 const response = await fetch(`${questionServiceBaseUrl}/delete-question/${questionId}`, {
                     method: 'DELETE',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getAccessToken()}`
                     }
                 });
 

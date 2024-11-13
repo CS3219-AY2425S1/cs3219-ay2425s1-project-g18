@@ -48,4 +48,21 @@ const authenticate = async (req: AuthenticatedRequest, res: Response, next: Next
     }
 };
 
-export { authenticate, AuthenticatedRequest };
+const authenticateForAccessToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const token = req.cookies.token;
+
+    if (!token) {
+        logger.warn('No token provided.');
+        return res.status(401).json({ message: 'Authentication token missing.' });
+    }
+
+    try {
+        verifyToken(token)
+        next();
+    } catch (error: any) {
+        logger.error('Error verifying token:', error);
+        return res.status(401).json({ message: 'Invalid authentication token.' });
+    }
+};
+
+export { authenticate, AuthenticatedRequest, authenticateForAccessToken };

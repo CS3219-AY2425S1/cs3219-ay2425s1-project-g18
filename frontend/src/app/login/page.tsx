@@ -40,6 +40,10 @@ const Login: React.FC = () => {
 
       if (response.ok) {
         await refreshAuth(); 
+
+        const accessToken = data.accessToken;
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('expiryTime', (new Date().getTime() + 5000).toString());
         router.push('/explore'); // redirect to explore
       } else {
         setError(data.message || 'Login failed. Please try again.');

@@ -1,13 +1,14 @@
 import express from 'express';
 import { registerUser } from '../controllers/userSignUpController';
 import { userLoginController } from '../controllers/logInController';
-import { authenticate, AuthenticatedRequest } from '../../middleware/authMiddleware';
+import { authenticate, AuthenticatedRequest, authenticateForAccessToken } from '../../middleware/authMiddleware';
 import { authStatusController } from '../controllers/checkAuthStatusController';
 import { getUserProfile } from '../controllers/getUserProfileController';
 import { authenticateAdmin } from '../../middleware/authAdminMiddleware';
 import { checkAdminController } from '../controllers/checkAdminController';
 import { getUserById } from '../controllers/getUserByIdController';
 import { userLogoutController } from '../controllers/logoutController';
+import { getNewAccessToken } from '../controllers/getNewAccessTokenController';
 
 const router = express.Router();
 
@@ -21,6 +22,8 @@ router.post('/register', registerUser);
 router.post('/login', userLoginController);
 // POST /api/users/logout
 router.post('/logout', authenticate, userLogoutController);
+
+router.post('/refresh', authenticateForAccessToken, getNewAccessToken)
 
 router.get('/get-user/:userId', getUserById);
 
