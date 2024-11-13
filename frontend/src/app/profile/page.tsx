@@ -8,15 +8,37 @@ import { difficulties } from '@/utils/constant';
 import HistoryTable from '@/app/profile/components/HistoryTable';
 import { FolderClock as HistoryIcon } from 'lucide-react';
 
+interface UserStatistics {
+    totalQuestions: number,
+    difficulty: Record<string, number>,
+    categories: Record<string, number>
+}
+
 const ProfilePage: React.FC = () => {
     const { isAuthenticated, user, isAdmin, refreshAuth } = useAuth();
     const [pastMatches, setPastMatches] = useState<PastMatch[]>([]);
     const [totalNumberOfMatches, setTotalNumberOfMatches] = useState(0);
-    const [skills, setSkills] = useState([]);
+    const [userStatistics, setUserStatistics] = useState<UserStatistics>();
     const [isLoadingMatches, setIsLoadingMatches] = useState(false);
 
     const questionServiceBaseUrl = process.env.NEXT_PUBLIC_QUESTION_SERVICE_URL;
     const historyServiceBaseUrl = process.env.NEXT_PUBLIC_HISTORY_SERVICE_URL;
+
+    const fetchUserStats = async () => {
+        try {
+            const response = await fetch(`${historyServiceBaseUrl}/stats/${user?.id}`, {
+                method: 'GET',
+            });
+            const { data } = await response.json()
+            if (response.ok) {
+                setUserStatistics(data);
+            }
+            return '';
+        } catch (err) {
+            console.log("Error!", err)
+            return '';
+        }
+    }
 
     const fetchQuestionData = async (questionId: string) => {
         try {
@@ -60,6 +82,7 @@ const ProfilePage: React.FC = () => {
     }
 
     useEffect(() => {
+        fetchUserStats();
         fetchPastMatches();
     }, []);
 
@@ -76,7 +99,7 @@ const ProfilePage: React.FC = () => {
         <div className="flex flex-grow items-center justify-center w-screen">
             <div className="flex-col h-full py-12 w-5/6 2xl:w-3/5 space-y-8">
                 <div className="flex flex-grow gap-8">
-                    <div className="min-w-fit w-1/4 p-4 bg-white rounded-lg space-y-4 shadow-lg">
+                    <div className="min-w-[300px] w-1/4 p-4 bg-white rounded-lg space-y-4 shadow-lg">
                         {/* Profile Card */}
                         <div className="flex">
                             <img
@@ -97,13 +120,13 @@ const ProfilePage: React.FC = () => {
                         <div className="flex flex-col gap-2">
                             <div className='flex'>
                                 <h2 className="text-sm font-bold">Problems Solved</h2>
-                                <p className="text-sm ml-auto">0</p>
+                                <p className="text-sm ml-auto">{userStatistics?.totalQuestions || 0}</p>
                             </div>
                             <div className='grid grid-cols-3 gap-2'>
                                 {difficulties.map((difficulty) => (
                                     <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-sm">
                                         <span style={{ color: `var(--color-${difficulty}-bg)` }} className={`text-xs font-semibold`}>{difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}</span>
-                                        <span className="text-xs">count</span>
+                                        <span className="text-xs">{userStatistics?.difficulty[difficulty.charAt(0).toUpperCase() + difficulty.slice(1)] || 0}</span>
                                     </div>
                                 ))}
                             </div>
@@ -112,8 +135,12 @@ const ProfilePage: React.FC = () => {
                         {/* Categories Statistics */}
                         <div className="flex flex-col gap-2">
                             <h2 className="text-sm font-bold">Skills</h2>
-                            <div className='flex'>
-                                {/* Add content here */}
+                            <div className='flex flex-wrap gap-2'>
+                                {Object.keys(userStatistics?.categories || {}).map((category) => (
+                                    <Badge variant='category' key={category}>
+                                        {category}: {userStatistics?.categories[category]}
+                                    </Badge>
+                                ))}
                             </div>
                         </div>
                     </div>
