@@ -3,6 +3,6 @@ import { deleteRoom } from './deleteRoomController';
 
 const router = Router();
 
-router.post('/delete-room', deleteRoom);
+router.delete('/delete-room', deleteRoom);
 
 export default router;

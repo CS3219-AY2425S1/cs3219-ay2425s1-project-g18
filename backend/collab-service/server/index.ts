@@ -6,6 +6,7 @@ import logger from '../utils/logger'
 
 import createRoomRouter from '../create-room/createRoomRouter'
 import deleteRoomRouter from '../delete-room/deleteRoomRouter'
+import verifyRoomRouter from '../verify-room-validity/verifyRoomValidityRouter'
 import { setupCodeCollabWebSocketServer } from '../websocket/websocketServer'
 import { setupVideoCallServer } from '../websocket/videoCallServer'
 import { verifyRoom } from '../verify-room-validity/verifyRoomValidityController'
@@ -29,7 +30,7 @@ app.use(express.json())
 
 app.use(createRoomRouter)
 app.use(deleteRoomRouter)
-app.use(verifyRoom)
+app.use(verifyRoomRouter)
 
 const PORT = process.env.PORT || 5003
 const server = createServer(app)

@@ -63,14 +63,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 
   const handleEditorDidMount: OnMount = (editor) => {
     setEditor(editor);
-    const ytext = ydoc.getText('monaco');
-    console.log('ytext length:', ytext.length);
-    console.log('initialCode:', initialCode);
-    // Initialize the shared text with initialCode
-    if (ytext.length === 0 && initialCode) {
-      ytext.insert(0, initialCode);
-    }
-    editor.setValue(ytext.toString());
   };
 
   return (
