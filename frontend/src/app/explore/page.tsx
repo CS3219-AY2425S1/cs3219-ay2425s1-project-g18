@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from "react";
-import QuestionTable from "../problems/components/QuestionTable";
+import { QuestionTable } from "../problems/components/data-table";
 import MatchingFilters from "./components/MatchingFilters";
 import { Notebook } from 'lucide-react';
 
@@ -37,7 +37,7 @@ export default function ExplorePage() {
                             <Notebook size={20} />
                             <h2 className="text-md font-semibold">Questions</h2>
                         </div>
-                        <QuestionTable questions={questions} isAdmin={false}/>
+                        <QuestionTable data={questions} isAdmin={false}/>
                     </div>
                     <div className="flex-1 shadow-lg rounded-lg">Suggested</div>
                 </div>

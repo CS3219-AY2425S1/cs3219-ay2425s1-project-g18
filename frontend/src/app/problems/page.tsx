@@ -25,10 +25,10 @@ import AddQuestionForm from "./components/addQuestionForm"
 import EditQuestionForm from "./components/editQuestionForm"
 import { useAuth } from "@/context/authContext"
 import DeleteQuestionAlertDialog from "./components/deleteQuestionAlertDialog";
-import QuestionTable from "./components/QuestionTable"
+import {QuestionTable} from "./components/data-table";
 
 export default function QuestionsPage() {
-    const [questions, setQuestions] = useState([]);
+    const [questions, setQuestions] = useState<Question[]>([]);
     const [questionId, setQuestionId] = useState(0);
     const [isAddQuestionDisplayed, setIsAddQuestionDisplayed] = useState(false);
     const [isEditQuestionDisplayed, setIsEditQuestionDisplayed] = useState(false);
@@ -92,7 +92,7 @@ export default function QuestionsPage() {
                     {/* Search */}
                     {/* Filter */}
                 </div>
-                <QuestionTable questions={questions} isAdmin={isAdmin} handleOpenEditCard={handleOpenEditCard} handleOpenDeleteDialog={handleOpenDeleteDialog} />
+                <QuestionTable data={questions} isAdmin={isAdmin} handleOpenEditCard={handleOpenEditCard} handleOpenDeleteDialog={handleOpenDeleteDialog} />
                 {/* Popup card for the add question form */}
                 {isAddQuestionDisplayed && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
