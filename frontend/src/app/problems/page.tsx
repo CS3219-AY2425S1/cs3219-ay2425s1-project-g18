@@ -25,7 +25,7 @@ import AddQuestionForm from "./components/addQuestionForm"
 import EditQuestionForm from "./components/editQuestionForm"
 import { useAuth } from "@/context/authContext"
 import DeleteQuestionAlertDialog from "./components/deleteQuestionAlertDialog";
-import {QuestionTable} from "./components/data-table";
+import {QuestionTable} from "./components/QuestionTable";
 
 export default function QuestionsPage() {
     const [questions, setQuestions] = useState<Question[]>([]);

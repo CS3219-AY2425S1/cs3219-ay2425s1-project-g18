@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from "react";
-import { QuestionTable } from "../problems/components/data-table";
+import { QuestionTable } from "../problems/components/QuestionTable";
 import MatchingFilters from "./components/MatchingFilters";
 import { Notebook } from 'lucide-react';
 
