@@ -56,7 +56,7 @@ const submitUserCode = async (
     const formattedInput = testCases
         .map((tc) => formatTestInput(tc.input))
         .join('\n')
-    const fileName = `q${questionId}.${languageExtensions.get(language)}`
+    const fileName = `q${questionId}.${languageExtensions.get(language == 'Cpp' ? 'c++' : language.toLowerCase())}`
     payload = {
         language: language.toLowerCase(),
         stdin: formattedInput,
