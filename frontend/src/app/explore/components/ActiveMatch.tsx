@@ -15,7 +15,6 @@ const ActiveMatch = ({ roomId = '' }) => {
             <h2 className="text-2xl font-semibold">Hey! It seems that you are already matched with a partner.</h2>
             <Button
                 onClick={handleRejoin}
-                className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
             >
                 Rejoin Collaborative Space
             </Button>
