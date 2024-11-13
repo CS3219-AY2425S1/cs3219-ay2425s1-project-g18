@@ -6,7 +6,7 @@ import logger from '../utils/logger'
 import { sendMatchResult } from './sendMatchResults'
 
 const requestQueue: TimedMatchRequest[] = []
-const MATCH_TIMEOUT = 5000 // 5 minutes
+const MATCH_TIMEOUT = 30000
 let isMatching: boolean = false
 
 // track timeouts for each userId
