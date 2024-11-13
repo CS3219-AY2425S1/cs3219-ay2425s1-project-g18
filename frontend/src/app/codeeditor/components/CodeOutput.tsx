@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { error } from "console";
 
 interface TestCase {
     input: string;
@@ -10,6 +11,7 @@ interface TestCase {
   
   interface CodeOutputProps {
     outputText: string;
+    errorOutputText: string;
     allPassed: boolean;
     handleRunCode: () => void;
     handleSubmitCode: () => void;
@@ -18,7 +20,7 @@ interface TestCase {
     isSubmitLoading: boolean; 
   }
 
-const CodeOutput:React.FC<CodeOutputProps> = ( { outputText, allPassed, handleRunCode, handleSubmitCode, testCases, isRunLoading, isSubmitLoading } ) => {
+const CodeOutput:React.FC<CodeOutputProps> = ( { outputText, errorOutputText, allPassed, handleRunCode, handleSubmitCode, testCases, isRunLoading, isSubmitLoading } ) => {
 
     return (
         <div className="flex flex-col h-full justify-between border-2 rounded-lg p-4 overflow-y-auto">
@@ -29,6 +31,10 @@ const CodeOutput:React.FC<CodeOutputProps> = ( { outputText, allPassed, handleRu
                 ) : (
                 <p className="text-rose-700 font-semibold">{outputText}</p>
                 )}
+            </div>
+
+            <div>
+                { errorOutputText && <p className="text-rose-700 font-semibold">{errorOutputText}</p> }
             </div>
 
             {/* Display Test Cases */}
